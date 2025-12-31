@@ -5,6 +5,7 @@ import com.example.neobank.entity.User;
 import com.example.neobank.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -34,8 +35,12 @@ public class UserService {
          if(user == null){
              throw new UsernameNotFoundException("User not found");
          }
-      // yaha se shuru 2 31 39
-        return null;
+         authenticationManager
+                 .authenticate(new UsernamePasswordAuthenticationToken(userDto.getUsername(), userDto.getPassword()));
+         authObject.put("token", "Bearer " .concat(jwtService.generateToken(userDto.getUsername())));
+         authObject.put("user" , user);
+
+        return authObject;
     }
 
 
