@@ -224,7 +224,7 @@ public class AccountController {
         return ResponseEntity.ok(responses);
     }
     @GetMapping("/details")
-    public ResponseEntity<?> getAccountDetails(Authentication authentication) {
+    public ResponseEntity<AccountDetailsResponse> getAccountDetails(Authentication authentication) {
 
         String email = authentication.getName();
 
@@ -234,12 +234,14 @@ public class AccountController {
         BankAccount account = bankAccountRepository.findByUser(user)
                 .orElseThrow(() -> new RuntimeException("Account not found"));
 
-        return ResponseEntity.ok(
-                Map.of(
-                        "accountNumber", account.getAccountNumber(),
-                        "balance", account.getBalance()
-                )
-        );
+        AccountDetailsResponse response =
+                new AccountDetailsResponse(
+                        account.getAccountNumber(),
+                        account.getBalance(),
+                        user.getFullName()   // 👈 NOW SENDING NAME
+                );
+
+        return ResponseEntity.ok(response);
     }
 
 }
