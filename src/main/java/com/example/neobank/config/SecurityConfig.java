@@ -27,39 +27,38 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         http
-                // ✅ ENABLE CORS (🔥 IMPORTANT)
+
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
-                // ❌ Disable defaults
+
                 .csrf(csrf -> csrf.disable())
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable())
 
-                // 🔑 Stateless JWT
+
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
 
-                // 🔐 Authorization rules
+
                 .authorizeHttpRequests(auth -> auth
 
-                        // 🔑 ALLOW PREFLIGHT REQUESTS
+
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // ✅ Public auth APIs
+
                         .requestMatchers("/auth/**").permitAll()
 
-                        // 🔐 Admin APIs
+
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
-                        // 👤 User banking APIs
+
                         .requestMatchers("/api/account/**").hasAnyRole("USER", "ADMIN")
 
-                        // ❌ Everything else blocked
                         .anyRequest().denyAll()
                 )
 
-                // 🔥 JWT filter
+
                 .addFilterBefore(
                         jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class
@@ -68,7 +67,7 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // 🔑 GLOBAL CORS CONFIG (AUTO APPLIES)
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
 
