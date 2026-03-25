@@ -1,0 +1,11 @@
+package com.example.neobank.repository;
+
+import com.example.neobank.entity.RegistrationOtp;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.Optional;
+
+public interface RegistrationOtpRepository  extends JpaRepository<RegistrationOtp, Long> {
+    Optional<RegistrationOtp> findTopByEmailAndUsedFalseOrderByExpiryTimeDesc(String email);
+    void deleteByEmail(String email);
+}

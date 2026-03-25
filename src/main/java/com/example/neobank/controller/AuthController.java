@@ -1,15 +1,14 @@
 package com.example.neobank.controller;
 
 import com.example.neobank.dto.*;
-import com.example.neobank.entity.BankAccount;
-import com.example.neobank.entity.PasswordResetOtp;
-import com.example.neobank.entity.Role;
-import com.example.neobank.entity.User;
+import com.example.neobank.entity.*;
 import com.example.neobank.repository.BankAccountRepository;
 import com.example.neobank.repository.PasswordResetOtpRepository;
+import com.example.neobank.repository.RegistrationOtpRepository;
 import com.example.neobank.repository.UserRepository;
 import com.example.neobank.security.JwtUtil;
 import com.example.neobank.service.EmailService;
+import com.example.neobank.service.RegistrationOtpService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,7 +43,10 @@ public class AuthController {
         int otp = 100000 + random.nextInt(900000);
         return String.valueOf(otp);
     }
-
+    @Autowired
+    private RegistrationOtpService registrationOtpService;
+    @Autowired
+    private RegistrationOtpRepository registrationOtpRepository;
 
     @Transactional
     @PostMapping("/forgot-password")
@@ -76,42 +78,54 @@ public class AuthController {
 
 
 
-    // REGISTER
+    // REGISTER(yaha se shru hoga)
+
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
 
-        if (userRepository.existsByEmail(request.getEmail())) {
-            return ResponseEntity
-                    .status(HttpStatus.CONFLICT)
-                    .body(Map.of("message", "Email already exists"));
+        Optional<User> existingUser = userRepository.findByEmail(request.getEmail());
+
+        //  If user already exists
+        if (existingUser.isPresent()) {
+
+            User user = existingUser.get();
+
+            //  If already verified → block
+            if (user.isVerified()) {
+                return ResponseEntity
+                        .status(HttpStatus.CONFLICT)
+                        .body(Map.of("message", "Email already exists"));
+            }
+
+            // If NOT verified → resend OTP
+            registrationOtpService.generateOtp(user.getEmail());
+
+            return ResponseEntity.ok(Map.of(
+                    "message", "OTP resent. Please verify your email"
+            ));
         }
 
-        // 🔹 Create User
+        //  New user → create
         User user = User.builder()
                 .fullName(request.getFullName())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(Role.USER)
+                .isVerified(false)
                 .build();
 
-        User savedUser = userRepository.save(user);
+        userRepository.save(user);
 
-        // 🔹 Auto-create Bank Account
-        BankAccount account = BankAccount.builder()
-                .accountNumber(generateAccountNumber())
-                .balance(BigDecimal.ZERO)
-                .user(savedUser)
-                .build();
-
-        bankAccountRepository.save(account);
+        //  Send OTP
+        registrationOtpService.generateOtp(user.getEmail());
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(Map.of(
-                        "message", "User registered and bank account created",
-                        "accountNumber", account.getAccountNumber()
+                        "message", "OTP sent to your email. Please verify to complete registration"
                 ));
     }
+
 
     // LOGIN
     @PostMapping("/login")
@@ -119,6 +133,12 @@ public class AuthController {
 
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (!user.isVerified()) {
+            return ResponseEntity
+                    .status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("message", "Please verify your email first"));
+        }
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             return ResponseEntity
@@ -135,7 +155,6 @@ public class AuthController {
                 Map.of("token", token)
         );
     }
-
 
 
 
@@ -197,5 +216,50 @@ public class AuthController {
         otpRepository.deleteByEmail(request.getEmail());
 
         return ResponseEntity.ok("Password reset successful");
+    }
+
+    @Transactional
+    @PostMapping("/verify-registration-otp")
+    public ResponseEntity<?> verifyRegistrationOtp(@RequestBody RegistrationOtpJson request) {
+
+        Optional<RegistrationOtp> otpData =
+                registrationOtpRepository.findTopByEmailAndUsedFalseOrderByExpiryTimeDesc(
+                        request.getEmail()
+                );
+
+        if (otpData.isEmpty()) {
+            return ResponseEntity.badRequest().body("OTP not found");
+        }
+
+        RegistrationOtp storedOtp = otpData.get();
+
+        //  Wrong OTP
+        if (!storedOtp.getOtp().equals(request.getOtp())) {
+            return ResponseEntity.badRequest().body("Invalid OTP");
+        }
+
+        //  Correct OTP → verify user
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setVerified(true);
+        userRepository.save(user);
+
+        //  Create bank account
+        BankAccount account = BankAccount.builder()
+                .accountNumber(generateAccountNumber())
+                .balance(BigDecimal.ZERO)
+                .user(user)
+                .build();
+
+        bankAccountRepository.save(account);
+
+        //  Delete OTP after success
+        registrationOtpRepository.deleteByEmail(request.getEmail());
+
+        return ResponseEntity.ok(Map.of(
+                "message", "Email verified successfully"
+
+        ));
     }
 }
