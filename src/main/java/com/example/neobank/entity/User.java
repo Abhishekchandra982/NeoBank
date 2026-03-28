@@ -1,5 +1,6 @@
 package com.example.neobank.entity;
 
+import com.example.neobank.converter.CryptoConverter; // 👈 ADD THIS
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -16,6 +17,7 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Convert(converter = CryptoConverter.class)
     @Column(nullable = false)
     private String fullName;
 
@@ -28,6 +30,6 @@ public class User {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
-    private boolean isVerified;
 
+    private boolean isVerified;
 }

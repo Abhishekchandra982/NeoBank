@@ -7,7 +7,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class NeobankApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(NeobankApplication.class, args);
+        SpringApplication.run(NeobankApplication.class, args);
+
 	}
 
 }
