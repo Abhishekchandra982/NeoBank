@@ -1,7 +1,0 @@
-services:
-  - type: web
-    name: neobank
-    runtime: java
-    plan: free
-    buildCommand: chmod +x mvnw && ./mvnw clean package -DskipTests
-    startCommand: java -Dserver.port=$PORT -jar target/neobank-0.0.1-SNAPSHOT.jar
