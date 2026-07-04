@@ -27,37 +27,28 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         http
-
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-
 
                 .csrf(csrf -> csrf.disable())
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable())
 
-
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
 
-
                 .authorizeHttpRequests(auth -> auth
-
 
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-
                         .requestMatchers("/auth/**").permitAll()
 
-
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
-
 
                         .requestMatchers("/api/account/**").hasAnyRole("USER", "ADMIN")
 
                         .anyRequest().denyAll()
                 )
-
 
                 .addFilterBefore(
                         jwtAuthenticationFilter,
@@ -67,25 +58,36 @@ public class SecurityConfig {
         return http.build();
     }
 
-
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
 
         CorsConfiguration config = new CorsConfiguration();
 
-        config.setAllowedOrigins(List.of("http://localhost:3000"));
+        config.setAllowedOrigins(List.of(
+                "http://localhost:3000",
+                "https://neobank-frontend-l9so.onrender.com"
+        ));
+
         config.setAllowedMethods(List.of(
-                "GET", "POST", "PUT", "DELETE", "OPTIONS"
+                "GET",
+                "POST",
+                "PUT",
+                "DELETE",
+                "OPTIONS"
         ));
+
         config.setAllowedHeaders(List.of(
-                "Authorization", "Content-Type"
+                "Authorization",
+                "Content-Type"
         ));
+
         config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source =
                 new UrlBasedCorsConfigurationSource();
 
         source.registerCorsConfiguration("/**", config);
+
         return source;
     }
 }
