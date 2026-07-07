@@ -30,7 +30,7 @@ public class RegistrationOtpService {
 
         otpRepository.save(otp);
 
-       // emailService.sendOtp(email, otpValue);
+        emailService.sendOtp(email, otpValue);
 
     }
     public void verifyOtp(String email, String enteredOtp){
