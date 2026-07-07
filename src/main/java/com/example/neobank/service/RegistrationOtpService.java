@@ -17,7 +17,7 @@ public class RegistrationOtpService {
 
     @Autowired
     private EmailService emailService;
-   /* @Transactional
+    @Transactional
     public void generateOtp(String email){
         String otpValue = String.valueOf(new Random().nextInt(900000) + 100000);
         otpRepository.deleteByEmail(email);
@@ -30,9 +30,9 @@ public class RegistrationOtpService {
 
         otpRepository.save(otp);
 
-        emailService.sendOtp(email, otpValue);
+       // emailService.sendOtp(email, otpValue);
 
-    }*/
+    }
     public void verifyOtp(String email, String enteredOtp){
 
         RegistrationOtp otp = otpRepository
