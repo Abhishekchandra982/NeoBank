@@ -19,8 +19,9 @@ public class EmailService {
 
         try {
 
-            SimpleMailMessage message = new SimpleMailMessage();
+            System.out.println("Preparing to send OTP to: " + email);
 
+            SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromEmail);
             message.setTo(email);
             message.setSubject("NeoBank OTP");
@@ -32,7 +33,9 @@ public class EmailService {
 
         } catch (Exception e) {
 
+            System.out.println("EMAIL FAILED");
             e.printStackTrace();
+
             throw new RuntimeException("Mail sending failed", e);
         }
     }
